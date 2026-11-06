@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uso — Trending Meme Maker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FFF8EE; --ink:#16130F; --muted:#6F6A62; --line:#16130F;
+    --tomato:#FF4F2E; --sun:#FFD23F; --mint:#BDF0D4; --sky:#CFE6FF; --card:#FFFFFF;
+    --radius:14px; --shadow:4px 4px 0 var(--ink);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  button,input,select{font:inherit;color:inherit}
+  button{cursor:pointer}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 18px}
+
+  /* Header */
+  header.top{position:sticky;top:0;z-index:20;background:var(--paper);border-bottom:2px solid var(--line)}
+  header.top .wrap{display:flex;align-items:center;gap:12px;height:62px}
+  .logo{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:30px;letter-spacing:-1px;display:flex;align-items:center;gap:8px;background:none;border:0;padding:0}
+  .logo .dot{width:26px;height:26px;border-radius:50%;background:var(--tomato);border:2px solid var(--ink);display:grid;place-items:center;font-size:14px}
+  @media (max-width:520px){ .logo small{display:none} }
+  .logo small{font-family:Inter;font-weight:600;font-size:12px;color:var(--muted);letter-spacing:0;margin-left:4px}
+  .spacer{flex:1}
+  .pill{white-space:nowrap;border:2px solid var(--ink);background:var(--card);border-radius:999px;padding:7px 14px;font-weight:700;font-size:14px;box-shadow:2px 2px 0 var(--ink)}
+  .pill:active{transform:translate(2px,2px);box-shadow:none}
+
+  /* Feed */
+  .hero{padding:34px 0 10px}
+  .hero h1{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:clamp(34px,6vw,58px);line-height:1;letter-spacing:-1.5px;margin:0 0 10px}
+  .hero h1 mark{background:var(--sun);padding:0 8px;border:2px solid var(--ink);border-radius:10px;display:inline-block;transform:rotate(-2deg)}
+  .hero p{margin:0;color:var(--muted);font-size:17px;max-width:620px}
+  .row-label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:22px 0 8px}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;border:2px solid var(--ink);background:var(--card);border-radius:999px;padding:7px 13px;font-weight:600;font-size:14px;white-space:nowrap}
+  .chip.on{background:var(--ink);color:var(--paper)}
+  .chip.topic.on{background:var(--tomato);color:#fff}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px;padding:18px 0 40px}
+  .card{display:flex;flex-direction:column;text-align:left;border:2px solid var(--ink);background:var(--card);border-radius:var(--radius);padding:0;overflow:hidden;box-shadow:var(--shadow);transition:transform .12s, box-shadow .12s}
+  .card:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink)}
+  .thumb{aspect-ratio:1;background:#EFE7DA;border-bottom:2px solid var(--ink);display:grid;place-items:center;overflow:hidden}
+  .thumb canvas{max-width:100%;max-height:100%;display:block}
+  .card .body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
+  .card h3{margin:0;font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:19px;letter-spacing:-.3px}
+  .card p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.4}
+  .meta{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700}
+  .badge{border:1.5px solid var(--ink);border-radius:999px;padding:2px 8px;font-size:12px;font-weight:800}
+  .badge.rising{background:var(--tomato);color:#fff}
+  .badge.peaking{background:var(--sun)}
+  .badge.evergreen{background:var(--mint)}
+  .badge.fading{background:#E4E0DA;color:#5b5750}
+  .vel.up{color:#0E8A4A}.vel.down{color:#B5361F}
+  .tags{font-size:12px;color:var(--muted);margin-top:auto}
+  .upload-card{background:var(--sun)}
+  .upload-card .thumb{background:var(--sun);font-size:64px}
+  .upload-card .thumb span{display:grid;place-items:center;gap:6px;font-size:15px;font-weight:800}
+  .upload-card .thumb span b{font-size:64px}
+  .note{font-size:12.5px;color:var(--muted);padding:0 0 40px}
+
+  /* Editor */
+  .ed-bar{display:flex;align-items:center;gap:12px;padding:16px 0}
+  .ed-bar .badge{white-space:nowrap}
+  @media (max-width:600px){ .ed-bar h2{font-size:19px !important;flex:1} }
+  .ed-bar h2{margin:0;font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:24px;letter-spacing:-.5px}
+  .ed{display:grid;grid-template-columns:1fr;gap:20px;padding-bottom:60px}
+  @media (min-width:920px){ .ed{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)} .preview-col{position:sticky;top:80px;align-self:start} }
+  .stage{background:repeating-conic-gradient(#EFE7DA 0 25%, #F7F1E6 0 50%) 0 0/22px 22px;border:2px solid var(--ink);border-radius:var(--radius);padding:14px;display:grid;place-items:center;box-shadow:var(--shadow)}
+  #pv{display:block;touch-action:none;border-radius:4px;box-shadow:0 2px 14px rgba(0,0,0,.18);cursor:grab}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:10px;text-align:center}
+  .panel{border:2px solid var(--ink);background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+  .panel h4{margin:0 0 12px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:8px}
+  .howto{background:var(--sky);border:2px solid var(--ink);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:14px}
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:11px}
+  .field label{font-size:12.5px;font-weight:700;color:var(--muted)}
+  .field input[type=text], .field textarea, .field select{border:2px solid var(--ink);border-radius:10px;padding:10px 12px;background:#fff;font-size:15px;width:100%}
+  .field textarea{resize:vertical;min-height:46px;font-family:inherit}
+  .inline{display:flex;gap:8px;flex-wrap:wrap}
+  .inline > .field{flex:1;min-width:140px}
+  .btn{border:2px solid var(--ink);border-radius:12px;padding:11px 16px;font-weight:800;background:var(--card);box-shadow:3px 3px 0 var(--ink)}
+  .btn:active{transform:translate(3px,3px);box-shadow:none}
+  .btn.primary{background:var(--tomato);color:#fff}
+  .btn.sun{background:var(--sun)}
+  .btn.block{width:100%;font-size:17px;padding:14px}
+  .btn:disabled{opacity:.55;cursor:wait}
+  .ideas{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  .idea{border:2px solid var(--ink);border-radius:10px;padding:9px 12px;background:#fff;text-align:left;font-size:14px;line-height:1.35}
+  .idea:hover{background:var(--paper)}
+  .idea .sep{color:var(--tomato);font-weight:800;padding:0 4px}
+  .idea.ai{border-style:dashed}
+  .seg{display:flex;flex-wrap:wrap;gap:6px}
+  .seg button{border:2px solid var(--ink);border-radius:10px;padding:7px 11px;background:#fff;font-weight:700;font-size:13.5px}
+  .seg button.on{background:var(--ink);color:var(--paper)}
+  .swatches{display:flex;gap:8px;margin-top:8px}
+  .sw{width:30px;height:30px;border-radius:50%;border:2px solid var(--ink)}
+  .sw.on{outline:3px solid var(--tomato);outline-offset:2px}
+  .slots{display:flex;gap:8px;flex-wrap:wrap}
+  .muted{color:var(--muted);font-size:13px}
+  .range-row{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700}
+  .range-row input{flex:1;accent-color:var(--tomato)}
+  .err{color:#B5361F;font-size:13px;margin-top:8px}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* Sheets */
+  .sheet-bg{position:fixed;inset:0;background:rgba(22,19,15,.55);z-index:50;display:none;align-items:flex-end;justify-content:center}
+  .sheet-bg.open{display:flex}
+  @media (min-width:700px){ .sheet-bg{align-items:center} }
+  .sheet{background:var(--paper);border:2px solid var(--ink);border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:92vh;overflow:auto;padding:20px}
+  @media (min-width:700px){ .sheet{border-radius:18px;box-shadow:6px 6px 0 var(--ink)} }
+  .sheet h3{margin:0 0 12px;font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:22px}
+  .sheet .out{display:block;max-width:100%;max-height:52vh;margin:0 auto 14px;border:2px solid var(--ink);border-radius:8px}
+  .sheet .actions{display:flex;gap:10px;flex-wrap:wrap}
+  .sheet .actions .btn{flex:1}
+  .progress{height:12px;border:2px solid var(--ink);border-radius:999px;overflow:hidden;background:#fff;margin:10px 0}
+  .progress i{display:block;height:100%;width:0;background:var(--tomato);transition:width .15s}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120px);background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:999px;font-weight:700;font-size:14px;z-index:60;transition:transform .25s;visibility:hidden}
+  .toast.show{visibility:visible}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <button class="logo" id="home" aria-label="Uso home"><span class="dot">🔥</span>uso<small>trending meme maker</small></button>
+    <div class="spacer"></div>
+    <button class="pill" id="openSettings">@handle</button>
+  </div>
+</header>
+
+<!-- FEED -->
+<main id="feed" class="wrap">
+  <section class="hero">
+    <h1>Ano'ng <mark>uso</mark> ngayon?</h1>
+    <p>Trending meme formats sa Pinas this week. Pick one, add your caption (or let AI suggest some in Taglish), then post.</p>
+  </section>
+
+  <div class="row-label">🇵🇭 Pinag-uusapan this week</div>
+  <div class="chips" id="topics"></div>
+
+  <div class="row-label">Niche</div>
+  <div class="chips" id="niches"></div>
+
+  <div class="grid" id="grid"></div>
+  <p class="note">MVP note: trend levels and topics are hand-curated sample data. The real feed will come from Imgflip, the X API, Giphy and a human curator.</p>
+</main>
+
+<!-- EDITOR -->
+<main id="editor" class="wrap" hidden>
+  <div class="ed-bar">
+    <button class="pill" id="back">← Feed</button>
+    <h2 id="edTitle">Template</h2>
+    <span class="badge" id="edBadge"></span>
+  </div>
+  <div class="ed">
+    <div class="preview-col">
+      <div class="stage" id="stage"><canvas id="pv"></canvas></div>
+      <div class="hint" id="pvHint">Drag text to move it · Tap a photo area to add your own image</div>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="howto" id="howto"></div>
+        <h4>✍️ Text</h4>
+        <div id="textFields"></div>
+        <div class="inline" style="align-items:center">
+          <div class="range-row" style="flex:1">Size <input type="range" id="textScale" min="0.6" max="1.4" step="0.05" value="1"></div>
+          <button class="pill" id="resetPos" style="font-size:12.5px">Reset positions</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h4>✨ Caption ideas</h4>
+        <div id="aiBox">
+          <div class="field"><label for="aiTopic">Topic</label><input type="text" id="aiTopic" placeholder="e.g. 13th month pay, traffic sa EDSA"></div>
+          <div class="inline">
+            <div class="field"><label for="aiNiche">Your niche</label><select id="aiNiche"></select></div>
+            <div class="field"><label for="aiLang">Language</label>
+              <select id="aiLang"><option>Taglish</option><option>Tagalog</option><option>English</option><option>Bisaya</option></select></div>
+          </div>
+          <button class="btn sun block" id="aiGo">✨ Suggest captions with AI</button>
+          <div class="err" id="aiErr" hidden></div>
+        </div>
+        <div class="muted" id="aiOff" hidden>AI captions work when this app is opened in Claude. Here are starter ideas instead.</div>
+        <div class="ideas" id="ideas"></div>
+      </div>
+
+      <div class="panel" id="photoPanel">
+        <h4>🖼️ Photos</h4>
+        <div class="slots" id="slotBtns"></div>
+        <p class="muted" id="photoNote" style="margin:10px 0 0"></p>
+      </div>
+
+      <div class="panel" id="modePanel" hidden>
+        <h4>🧱 Layout</h4>
+        <div class="seg" id="modeSeg">
+          <button data-mode="classic">Classic top + bottom</button>
+          <button data-mode="bar">Caption bar (GIF style)</button>
+        </div>
+      </div>
+
+      <div class="panel" id="gifPanel" hidden>
+        <h4>🎞️ GIF</h4>
+        <div class="muted" id="gifInfo" style="margin-bottom:10px"></div>
+        <div class="field"><label>Speed</label>
+          <div class="seg" id="speedSeg">
+            <button data-s="0.5">0.5×</button><button data-s="1" class="on">1×</button><button data-s="1.5">1.5×</button><button data-s="2">2×</button>
+          </div>
+        </div>
+        <div class="range-row">Start <input type="range" id="trimStart" min="0" value="0"></div>
+        <div class="range-row" style="margin-top:8px">End&nbsp;&nbsp; <input type="range" id="trimEnd" min="0" value="0"></div>
+      </div>
+
+      <div class="panel">
+        <h4>📐 Format</h4>
+        <div class="seg" id="aspectSeg">
+          <button data-a="orig" class="on">Original</button>
+          <button data-a="1:1">1:1 Square</button>
+          <button data-a="4:5">4:5 FB/IG feed</button>
+          <button data-a="9:16">9:16 Reels/TikTok</button>
+        </div>
+        <div class="muted" style="margin-top:10px">Background for empty space</div>
+        <div class="swatches" id="swatches"></div>
+      </div>
+
+      <button class="btn primary block" id="exportBtn">Export meme ↓</button>
+    </div>
+  </div>
+</main>
+
+<!-- Export sheet -->
+<div class="sheet-bg" id="exportSheet">
+  <div class="sheet">
+    <h3 id="exTitle">Your meme</h3>
+    <div id="exProgress" hidden>
+      <div class="muted" id="exProgText">Encoding GIF…</div>
+      <div class="progress"><i id="exBar"></i></div>
+    </div>
+    <img class="out" id="exImg" alt="Your exported meme" hidden>
+    <p class="muted" id="exHelp" hidden style="margin:0 0 14px">If the Save button doesn't work here, long-press (phone) or right-click (computer) the image to save it.</p>
+    <div class="actions">
+      <button class="btn primary" id="exSave" hidden>Save</button>
+      <button class="btn" id="exClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings sheet -->
+<div class="sheet-bg" id="settingsSheet">
+  <div class="sheet">
+    <h3>Your creator profile</h3>
+    <div class="field"><label for="handleIn">Your handle (shown as a watermark)</label><input type="text" id="handleIn" placeholder="@yourpage"></div>
+    <div class="field"><label for="nicheIn">Your main niche</label><select id="nicheIn"></select></div>
+    <label class="range-row" style="margin:6px 0 16px"><input type="checkbox" id="wmIn" style="flex:none;width:18px;height:18px"> Add my handle as a watermark</label>
+    <div class="actions"><button class="btn primary" id="saveSettings">Save</button></div>
+  </div>
+</div>
+
+<input type="file" id="file" accept="image/*" hidden>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ============================ Data (curated sample) ============================ */
+const W = 1080;
+const NICHES = [
+  ["all","Lahat"],["work","Work / Office"],["money","Sweldo / Money"],["showbiz","Showbiz / Chika"],
+  ["relationships","Love / Barkada"],["food","Food"],["school","School"],["commute","Commute / Traffic"],
+  ["gaming","Gaming"],["seasonal","Pasko / -Ber months"]
+];
+const TOPICS = ["13th month pay","11.11 sale","Christmas party","Exchange gift","Traffic sa EDSA","-Ber months","Sweldo day","Noche Buena budget","UAAP season","Undas long weekend"];
+const LIFE = { rising:"🔥 Rising", peaking:"📈 Peaking", evergreen:"⭐ Evergreen", fading:"📉 Fading" };
+const LIFE_ORDER = { rising:0, peaking:1, evergreen:2, fading:3 };
+
+/* ============================ Drawing helpers ============================ */
+const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+function rr(ctx,x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function fillRR(ctx,x,y,w,h,r,c){ rr(ctx,x,y,w,h,r); ctx.fillStyle=c; ctx.fill(); }
+function rect(ctx,x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(x,y,w,h); }
+function emoji(ctx,ch,x,y,size){ ctx.save(); ctx.font=`${size}px ${EMOJI_FONT}`; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(ch,x,y); ctx.restore(); }
+function label(ctx,text,x,y,font,color,align="left"){ ctx.save(); ctx.font=font; ctx.fillStyle=color; ctx.textAlign=align; ctx.textBaseline="middle"; ctx.fillText(text,x,y); ctx.restore(); }
+function vgrad(ctx,x,y,w,h,c1,c2){ const g=ctx.createLinearGradient(0,y,0,y+h); g.addColorStop(0,c1); g.addColorStop(1,c2); ctx.fillStyle=g; ctx.fillRect(x,y,w,h); }
+
+const STYLES = {
+  meme:      { family:'Anton, Impact, "Arial Narrow", sans-serif', weight:"400", upper:true,  fill:"#fff", stroke:"#000", strokeK:0.13, lineH:1.08, max:120, min:26, align:"center" },
+  plain:     { family:'Inter, Arial, sans-serif', weight:"700", upper:false, fill:"#121212", lineH:1.24, max:70, min:22, align:"left" },
+  plainWhite:{ family:'Inter, Arial, sans-serif', weight:"800", upper:false, fill:"#fff", shadow:true, lineH:1.2, max:72, min:22, align:"left" },
+  news:      { family:'Inter, Arial, sans-serif', weight:"800", upper:true,  fill:"#111", lineH:1.08, max:54, min:18, align:"left" },
+  ticker:    { family:'Inter, Arial, sans-serif', weight:"700", upper:true,  fill:"#fff", lineH:1.1, max:32, min:14, align:"left" }
+};
+function wrapLines(ctx,text,maxW){
+  const out=[];
+  for(const para of text.split("\n")){
+    const words=para.split(/\s+/).filter(Boolean); let line="";
+    if(!words.length){ out.push(""); continue; }
+    for(const w of words){ const t=line?line+" "+w:w; if(line && ctx.measureText(t).width>maxW){ out.push(line); line=w; } else line=t; }
+    out.push(line);
+  }
+  return out;
+}
+function drawBox(ctx,text,b,mul){
+  const S=STYLES[b.style||"meme"]; let t=(text||"").trim(); if(!t) return;
+  if(S.upper) t=t.toUpperCase();
+  let size=Math.round((b.max||S.max)*mul), lines;
+  for(;;){
+    ctx.font=`${S.weight} ${size}px ${S.family}`;
+    lines=wrapLines(ctx,t,b.w);
+    const widest=Math.max(...lines.map(l=>ctx.measureText(l).width));
+    if((lines.length*size*S.lineH<=b.h && widest<=b.w) || size<=S.min) break;
+    size=Math.max(S.min,size-2);
+  }
+  const lh=size*S.lineH, total=lines.length*lh, align=b.align||S.align;
+  const y0 = b.valign==="top" ? b.y : b.valign==="bottom" ? b.y+b.h-total : b.y+(b.h-total)/2;
+  const x = align==="left" ? b.x : align==="right" ? b.x+b.w : b.x+b.w/2;
+  ctx.save(); ctx.textAlign=align; ctx.textBaseline="middle";
+  lines.forEach((l,i)=>{
+    const y=y0+lh*i+lh/2;
+    if(S.stroke){ ctx.lineJoin="round"; ctx.miterLimit=2; ctx.lineWidth=size*S.strokeK; ctx.strokeStyle=S.stroke; ctx.strokeText(l,x,y); }
+    if(S.shadow){ ctx.shadowColor="rgba(0,0,0,.6)"; ctx.shadowBlur=size*0.3; ctx.shadowOffsetY=size*0.05; }
+    ctx.fillStyle=S.fill; ctx.fillText(l,x,y);
+    ctx.shadowColor="transparent"; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+  });
+  ctx.restore();
+}
+function drawCover(ctx,src,s){
+  const iw=src.naturalWidth||src.width, ih=src.naturalHeight||src.height; if(!iw||!ih) return;
+  const r=Math.max(s.w/iw,s.h/ih), dw=iw*r, dh=ih*r;
+  ctx.save(); rr(ctx,s.x,s.y,s.w,s.h,s.r||0); ctx.clip();
+  ctx.drawImage(src,s.x+(s.w-dw)/2,s.y+(s.h-dh)/2,dw,dh); ctx.restore();
+}
+
+/* ============================ Templates (original art) ============================ */
+const TEMPLATES = [
+  { id:"sweldo", name:"Bago vs Pagkatapos ng Sweldo", life:"rising", vel:82, niches:["money","work"], origin:"PH",
+    howTo:"Left: you before payday, broke. Right: you after payday, rich for about 2 hours.",
+    examples:[["Ako, 2 days bago sweldo","Ako, 2 hours after sweldo"],["Wallet ko bago 13th month","Wallet ko after Christmas party"],["GCash ko sa 14th","GCash ko sa 15th"]],
+    layout:()=>({H:1080, slots:[], boxes:[
+      {x:24,y:780,w:492,h:280,style:"meme",valign:"bottom",label:"Left: you before payday"},
+      {x:564,y:780,w:492,h:280,style:"meme",valign:"bottom",label:"Right: you after payday"}]}),
+    draw(ctx){ vgrad(ctx,0,0,540,1080,"#3A3A46","#1C1C24"); emoji(ctx,"💀",270,430,300); vgrad(ctx,540,0,540,1080,"#FFE27A","#F2B51C"); emoji(ctx,"🤑",810,430,300); emoji(ctx,"✨",960,160,90); emoji(ctx,"💸",660,210,90); rect(ctx,537,0,6,1080,"#111"); }
+  },
+  { id:"news", name:"Chika News: Breaking", life:"rising", vel:64, niches:["showbiz","relationships","work"], origin:"PH",
+    howTo:"Report a tiny everyday drama like it's national headline news. Add your own photo for best results.",
+    examples:[["Lalaki, umuwi nang maaga sa inuman para raw 'di mapagalitan","EXCLUSIVE • 'Di pa rin daw nakaka-move on • Detalye mamaya"],["Officemate, nag-reply-all sa buong company: 'Sino may charger?'","LIVE • Buong HR, nagulat • IT department, nag-leave"],["Tita, nagtanong ulit ng 'Kailan ka mag-aasawa?' sa Noche Buena","UPDATE • Pamangkin, biglang may 'emergency' sa labas"]],
+    layout:()=>({H:1080, slots:[{x:0,y:0,w:1080,h:1080,ph:"🗣️",phBg:"#2A4C8F"}], boxes:[
+      {x:62,y:850,w:956,h:132,style:"news",align:"left",valign:"middle",label:"Headline"},
+      {x:24,y:1014,w:1032,h:60,style:"ticker",align:"left",valign:"middle",label:"Ticker"}]}),
+    overlay(ctx){
+      const g=ctx.createLinearGradient(0,620,0,1080); g.addColorStop(0,"rgba(0,0,0,0)"); g.addColorStop(1,"rgba(0,0,0,.55)"); ctx.fillStyle=g; ctx.fillRect(0,620,1080,460);
+      fillRR(ctx,40,760,330,84,8,"#E3262F"); label(ctx,"BREAKING",205,803,"800 50px Inter, Arial","#fff","center");
+      fillRR(ctx,40,840,1000,152,8,"#FFFFFF"); rect(ctx,0,1008,1080,72,"#111");
+      fillRR(ctx,850,40,190,64,10,"rgba(227,38,47,.95)"); label(ctx,"CHIKA NEWS",945,73,"800 26px Inter, Arial","#fff","center");
+      fillRR(ctx,40,40,120,50,8,"rgba(0,0,0,.6)"); ctx.fillStyle="#FF3B3B"; ctx.beginPath(); ctx.arc(66,65,9,0,7); ctx.fill(); label(ctx,"LIVE",82,66,"800 26px Inter, Arial","#fff");
+    }
+  },
+  { id:"pov", name:"POV:", life:"rising", vel:51, niches:["relationships","commute","school","work"], origin:"Global",
+    howTo:"Put the viewer inside a relatable situation. Works best over your own photo or screenshot.",
+    examples:[["POV: Sinabi mong 'on the way na' pero kakaligo mo pa lang"],["POV: Nag-'K' lang siya sa mahaba mong message"],["POV: Ikaw nag-suggest ng exchange gift tapos ikaw rin ang walang budget"]],
+    layout:()=>({H:1350, slots:[{x:0,y:0,w:1080,h:1350,ph:"👀",phBg:"#4B2A7B"}], boxes:[
+      {x:70,y:90,w:940,h:440,style:"plainWhite",align:"left",valign:"top",max:76,label:"POV line"}]}),
+    overlay(ctx){ const g=ctx.createLinearGradient(0,0,0,700); g.addColorStop(0,"rgba(0,0,0,.7)"); g.addColorStop(1,"rgba(0,0,0,0)"); ctx.fillStyle=g; ctx.fillRect(0,0,1080,700); }
+  },
+  { id:"ber", name:"-Ber Months Mode", life:"peaking", vel:18, niches:["seasonal","food","money"], origin:"PH",
+    howTo:"Top: set up the season. Bottom: the very Pinoy thing people do for Christmas way too early.",
+    examples:[["Pinoy sa -ber months:","Sept 1 pa lang, may parol na sa bintana"],["Ako pagdating ng November:","Nagbibilang na ng araw bago 13th month"],["Mga Tita sa Noche Buena:","'Kailan ka mag-aasawa?' x10"]],
+    layout:()=>({H:1350, slots:[], boxes:[
+      {x:60,y:470,w:960,h:130,style:"plainWhite",align:"center",valign:"middle",max:64,label:"Setup line"},
+      {x:60,y:640,w:960,h:640,style:"meme",valign:"middle",max:130,label:"Punchline"}]}),
+    draw(ctx){ vgrad(ctx,0,0,1080,1350,"#13603C","#0A2E1D"); const sp=[["❄️",120,120,70],["✨",940,150,80],["⭐",180,1240,60],["❄️",960,1220,70],["✨",80,620,50],["🎁",990,560,70]]; sp.forEach(s=>emoji(ctx,...s)); emoji(ctx,"🎄",540,250,260); }
+  },
+  { id:"starter", name:"Starter Pack", life:"peaking", vel:12, niches:["seasonal","food","work","school"], origin:"Global",
+    howTo:"Name a type of person or event, then list 4 things that always come with it. Add your own photos to the tiles.",
+    examples:[["Pinoy Christmas Party Starter Pack","Exchange gift na ₱300","Monito monita","Videoke hanggang 2AM","Tupperware ni Mama"],["Bagong Sweldo Starter Pack","Samgyup","Add to cart","'Deserve ko 'to'","Zero ulit sa 30th"]],
+    layout(){ const slots=[], boxes=[{x:40,y:22,w:1000,h:160,style:"plain",align:"center",valign:"middle",max:68,label:"Title"}];
+      const ph=["🎁","🎤","🍗","🍱"], bg=["#FFE1E1","#E1F0FF","#FFF1C9","#DFF5E6"];
+      for(let i=0;i<4;i++){ const x=27+(i%2)*526, y=200+Math.floor(i/2)*440; slots.push({x,y,w:500,h:300,r:18,ph:ph[i],phBg:bg[i]}); boxes.push({x,y:y+306,w:500,h:118,style:"plain",align:"center",valign:"middle",max:44,label:`Item ${i+1}`}); }
+      return {H:1080,slots,boxes}; },
+    draw(ctx){ rect(ctx,0,0,1080,1080,"#FFFFFF"); }
+  },
+  { id:"ayaw", name:"Ayaw / Gusto", life:"evergreen", vel:6, niches:["money","work","relationships","food"], origin:"Global",
+    howTo:"Top: the sensible choice, rejected. Bottom: the chaotic choice, loved.",
+    examples:[["Mag-ipon para sa future","Mag-add to cart sa 11.11 sale"],["Matulog nang maaga","'Isang episode na lang' hanggang 3AM"],["Mag-meal prep","Milk tea at siomai rice ulit"]],
+    layout:()=>({H:1080, slots:[], boxes:[
+      {x:580,y:40,w:460,h:460,style:"plain",align:"left",valign:"middle",max:64,label:"Top: what you reject"},
+      {x:580,y:580,w:460,h:460,style:"plain",align:"left",valign:"middle",max:64,label:"Bottom: what you choose"}]}),
+    draw(ctx){ rect(ctx,0,0,1080,1080,"#fff"); rect(ctx,0,0,540,540,"#F8D3C5"); emoji(ctx,"🙅",270,280,300); rect(ctx,0,540,540,540,"#CDEBC2"); emoji(ctx,"😌",270,820,300); rect(ctx,0,537,1080,6,"#111"); rect(ctx,537,0,6,1080,"#111"); }
+  },
+  { id:"buttons", name:"Dalawang Button", life:"evergreen", vel:4, niches:["money","food","school","work","gaming"], origin:"Global",
+    howTo:"Two options that are both tempting (or both bad). Bottom: who's stuck choosing.",
+    examples:[["Mag-ipon","11.11 sale","Ako, may ₱500 na lang"],["Mag-review para sa exam","Isa pang TikTok","Estudyante, 11PM"],["Rank game","Matulog na","Ako, may pasok bukas"]],
+    layout:()=>({H:1350, slots:[], boxes:[
+      {x:225,y:260,w:270,h:150,style:"plainWhite",align:"center",valign:"middle",max:46,label:"Button 1"},
+      {x:585,y:260,w:270,h:150,style:"plainWhite",align:"center",valign:"middle",max:46,label:"Button 2"},
+      {x:40,y:1190,w:1000,h:140,style:"meme",valign:"bottom",max:96,label:"Who has to choose"}]}),
+    draw(ctx){ rect(ctx,0,0,1080,800,"#E6ECF2"); fillRR(ctx,130,110,820,580,36,"#8E9AA8"); fillRR(ctx,150,130,780,540,28,"#A9B4C0");
+      for(const cx of [360,720]){ ctx.fillStyle="#8B1414"; ctx.beginPath(); ctx.arc(cx,350,168,0,7); ctx.fill(); const g=ctx.createRadialGradient(cx-50,290,20,cx,340,160); g.addColorStop(0,"#FF7A6B"); g.addColorStop(1,"#D3201F"); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,336,156,0,7); ctx.fill(); }
+      emoji(ctx,"👆",540,600,110); rect(ctx,0,800,1080,550,"#FFF0CC"); rect(ctx,0,797,1080,6,"#111"); emoji(ctx,"😰",540,1010,300); }
+  },
+  { id:"nobody", name:"Nobody: / Ako:", life:"evergreen", vel:3, niches:["relationships","school","work","commute","gaming"], origin:"Global",
+    howTo:"'Nobody:' means no one asked. Then show the oddly specific thing you do anyway. Add a reaction photo.",
+    examples:[["Ako: *nagpa-plano na ng outfit para sa Christmas party, October pa lang*"],["Ako sa jeep: *nire-rehearse ang 'Bayad po' 5 times bago iabot*"],["Ako pag may 'Libre ko' sa GC: *online agad in 0.2 seconds*"]],
+    layout:()=>({H:1080, slots:[{x:80,y:540,w:920,h:480,r:22,ph:"🏃",phBg:"#E9E2FF"}], boxes:[
+      {x:80,y:190,w:920,h:320,style:"plain",align:"left",valign:"top",max:62,label:"Ako: …"}]}),
+    draw(ctx){ rect(ctx,0,0,1080,1080,"#fff"); label(ctx,"Nobody:",80,120,"700 62px Inter, Arial","#121212"); }
+  },
+  { id:"post", name:"Text Post / Hot Take", life:"evergreen", vel:9, niches:["work","relationships","showbiz","school","food"], origin:"Global",
+    howTo:"One relatable line or hot take, styled as a post. Your handle appears on it.",
+    examples:[["'Last na 'to' sa videoke ay hindi kailanman huli."],["Ang tunay na love language ng Pinoy: 'Kumain ka na?'"],["Walang mas mabilis pa sa Pinoy na nakarinig ng 'Sale'."]],
+    layout:()=>({H:1080, slots:[], boxes:[{x:110,y:380,w:860,h:420,style:"plain",align:"left",valign:"top",max:66,label:"Your post"}]}),
+    draw(ctx,st){ rect(ctx,0,0,1080,1080,"#EEF0F4"); ctx.save(); ctx.shadowColor="rgba(0,0,0,.12)"; ctx.shadowBlur=40; ctx.shadowOffsetY=12; fillRR(ctx,60,190,960,700,40,"#fff"); ctx.restore();
+      const h=(prefs.handle||"@ikaw").replace(/^@?/,"@"); ctx.fillStyle="#FF4F2E"; ctx.beginPath(); ctx.arc(160,290,52,0,7); ctx.fill();
+      label(ctx,(h[1]||"U").toUpperCase(),160,292,"800 50px Inter, Arial","#fff","center"); label(ctx,h.slice(1)||"ikaw",232,270,"800 40px Inter, Arial","#121212"); label(ctx,h+" · 2h",232,318,"500 32px Inter, Arial","#7A7F8A");
+      label(ctx,"💬 1.2K      🔁 8.4K      ❤️ 52K",110,840,"600 32px Inter, Arial","#7A7F8A"); }
+  },
+  { id:"expect", name:"Expectation vs Reality", life:"evergreen", vel:5, niches:["commute","food","relationships","seasonal"], origin:"Global",
+    howTo:"Top: what you imagined. Bottom: what actually happened. Add two photos.",
+    examples:[["Long weekend sa Baguio","4 hours sa traffic sa Marcos Highway"],["Christmas party outfit sa Pinterest","Ako, pawis na sa jeep papunta"],["Ulam sa food vlog","Ulam ko: pancit canton ulit"]],
+    layout:()=>({H:1350, slots:[{x:0,y:0,w:1080,h:675,ph:"🏖️",phBg:"#BFE7F2"},{x:0,y:675,w:1080,h:675,ph:"🌧️",phBg:"#8E98A6"}], boxes:[
+      {x:30,y:470,w:1020,h:190,style:"meme",valign:"bottom",max:100,label:"Expectation"},
+      {x:30,y:1145,w:1020,h:190,style:"meme",valign:"bottom",max:100,label:"Reality"}]}),
+    overlay(ctx){ rect(ctx,0,672,1080,6,"#111"); for(const [t,y,c] of [["EXPECTATION",30,"#16130F"],["REALITY",705,"#FF4F2E"]]){ ctx.font="800 34px Inter, Arial"; const w=ctx.measureText(t).width+44; fillRR(ctx,30,y,w,62,31,c); label(ctx,t,52,y+32,"800 34px Inter, Arial","#fff"); } }
+  },
+  { id:"brain", name:"Brain Level Up", life:"fading", vel:-23, niches:["work","commute","gaming","money"], origin:"Global",
+    howTo:"Four ways to do the same thing, each 'smarter' (and more ridiculous) than the last.",
+    examples:[["Mag-commute papasok","Mag-Grab papasok","Mag-WFH","Mag-sick leave tuwing Lunes"],["Mag-ipon sa bangko","Mag-ipon sa alkansya","Mag-ipon sa GCash","Itago sa ilalim ng kutson ni Lola"]],
+    layout(){ const boxes=[]; for(let i=0;i<4;i++) boxes.push({x:36,y:i*360+20,w:500,h:320,style:"plain",align:"center",valign:"middle",max:58,label:`Level ${i+1}`}); return {H:1440,slots:[],boxes}; },
+    draw(ctx){ rect(ctx,0,0,1080,1440,"#fff");
+      for(let i=0;i<4;i++){ const y=i*360; rect(ctx,560,y,520,360,"#0B0B1A"); const g=ctx.createRadialGradient(820,y+180,10,820,y+180,120+i*70); const c=["rgba(120,160,255,","rgba(110,220,255,","rgba(255,230,120,","rgba(255,140,255,"][i]; g.addColorStop(0,c+(0.25+i*0.22)+")"); g.addColorStop(1,c+"0)"); ctx.fillStyle=g; ctx.fillRect(560,y,520,360);
+        emoji(ctx,"🧠",820,y+180,110+i*26); if(i>=2) { emoji(ctx,"✨",700,y+80,50+i*8); emoji(ctx,"✨",960,y+280,46+i*8); } if(i===3) emoji(ctx,"🌌",980,y+70,60);
+        if(i) rect(ctx,0,y-3,1080,6,"#111"); }
+      rect(ctx,557,0,6,1440,"#111"); }
+  }
+];
+const CUSTOM = { id:"custom", name:"Your own image or GIF", life:"evergreen", vel:0, niches:[], origin:"You",
+  howTo:"Upload the blank of a meme you just saw trending (image or GIF), then caption it your way.",
+  examples:[["Kapag sinabi ng boss na 'quick call lang'","…2 hours later"],["Ako pagdating ng sweldo","Ako pagdating ng bills"]],
+  examplesBar:[["Ako pagkatapos sabihing 'isang order na lang' sa 11.11"],["Yung officemate mong nag-'noted with thanks' pero hindi naman binasa"]],
+  layout(st){
+    const src=st.photos[0]; let H=1080;
+    if(src){ const iw=src.naturalWidth||src.width, ih=src.naturalHeight||src.height; H=Math.round(Math.min(1920,Math.max(540,W*ih/iw))); }
+    if(st.mode==="bar"){
+      const m=document.createElement("canvas").getContext("2d"); m.font=`700 ${Math.round(62*st.textScale)}px Inter, Arial`;
+      const lines=wrapLines(m,st.texts[0]||"Your caption here",960).length; const barH=Math.max(170,Math.round(lines*62*st.textScale*1.24+80));
+      return {H:barH+H, slots:[{x:0,y:barH,w:W,h:H,ph:"🖼️",phBg:"#E9E1D3",phText:"Tap to upload image or GIF"}], boxes:[{x:60,y:40,w:960,h:barH-80,style:"plain",align:"left",valign:"middle",max:62,label:"Caption above the image"}], bar:barH};
+    }
+    return {H, slots:[{x:0,y:0,w:W,h:H,ph:"🖼️",phBg:"#E9E1D3",phText:"Tap to upload image or GIF"}], boxes:[
+      {x:30,y:24,w:1020,h:Math.round(H*0.28),style:"meme",valign:"top",label:"Top text"},
+      {x:30,y:Math.round(H*0.72)-24,w:1020,h:Math.round(H*0.28),style:"meme",valign:"bottom",label:"Bottom text"}]};
+  },
+  draw(ctx,st,L){ if(L.bar){ rect(ctx,0,0,W,L.bar,"#fff"); } }
+};
+const ALL = [CUSTOM, ...TEMPLATES];
+const byId = id => ALL.find(t=>t.id===id);
+
+/* ============================ Prefs ============================ */
+const prefs = { handle:"", niche:"all", watermark:true };
+try{ Object.assign(prefs, JSON.parse(localStorage.getItem("uso-prefs")||"{}")); }catch(e){}
+function savePrefs(){ try{ localStorage.setItem("uso-prefs", JSON.stringify(prefs)); }catch(e){} }
+
+/* ============================ Rendering ============================ */
+const ASPECTS = { "1:1":1, "4:5":1.25, "9:16":16/9 };
+function frameSize(L,aspect,frameW){ return { fw:frameW, fh: aspect==="orig" ? Math.round(frameW*L.H/W) : Math.round(frameW*ASPECTS[aspect]) }; }
+function render(ctx,tpl,st,frameW,{preview=false}={}){
+  const L=tpl.layout(st); const {fw,fh}=frameSize(L,st.aspect,frameW);
+  const s=Math.min(fw/W, fh/L.H), ox=(fw-W*s)/2, oy=(fh-L.H*s)/2;
+  ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle=st.bg; ctx.fillRect(0,0,fw,fh);
+  ctx.translate(ox,oy); ctx.scale(s,s);
+  ctx.save(); rr(ctx,0,0,W,L.H,0); ctx.clip();
+  tpl.draw && tpl.draw(ctx,st,L);
+  L.slots.forEach((sl,i)=>{
+    const src=st.photos[i];
+    if(src) drawCover(ctx,src,sl);
+    else { ctx.save(); rr(ctx,sl.x,sl.y,sl.w,sl.h,sl.r||0); ctx.fillStyle=sl.phBg; ctx.fill(); ctx.restore();
+      emoji(ctx,sl.ph,sl.x+sl.w/2,sl.y+sl.h/2-(preview?20:0),Math.min(sl.w,sl.h)*0.42);
+      if(preview && (sl.phText||sl.r)) label(ctx,sl.phText||"Tap to add photo",sl.x+sl.w/2,sl.y+sl.h/2+Math.min(sl.w,sl.h)*0.28,"600 30px Inter, Arial","rgba(0,0,0,.5)","center"); }
+  });
+  tpl.overlay && tpl.overlay(ctx,st,L);
+  L.boxes.forEach((b0,i)=>{
+    const o=st.offsets[i]||{dx:0,dy:0}; const b={...b0,x:b0.x+o.dx,y:b0.y+o.dy};
+    const txt=st.texts[i];
+    if(preview && (!txt || !txt.trim() || st.dragIdx===i)){
+      ctx.save(); ctx.setLineDash([14,10]); ctx.lineWidth=3; ctx.strokeStyle= st.dragIdx===i ? "#FF4F2E" : "rgba(120,120,120,.8)"; ctx.strokeRect(b.x,b.y,b.w,b.h); ctx.restore();
+      if(!txt || !txt.trim()) label(ctx,b.label,b.x+b.w/2,b.y+b.h/2,"600 28px Inter, Arial","rgba(120,120,120,.95)","center");
+    }
+    drawBox(ctx,txt,b,st.textScale);
+  });
+  ctx.restore();
+  ctx.restore();
+  if(prefs.watermark && prefs.handle){
+    const h=prefs.handle.replace(/^@?/,"@"), fs=Math.max(11,Math.round(fw*0.026));
+    ctx.save(); ctx.font=`700 ${fs}px Inter, Arial`; ctx.textAlign="right"; ctx.textBaseline="bottom";
+    ctx.shadowColor="rgba(0,0,0,.7)"; ctx.shadowBlur=fs*0.4; ctx.fillStyle="rgba(255,255,255,.92)";
+    ctx.fillText(h, fw-fs*0.8, fh-fs*0.6); ctx.restore();
+  }
+  return {L,fw,fh,s,ox,oy};
+}
+
+/* ============================ State ============================ */
+let st=null, tpl=null, T=null, gifTimer=null, renderQueued=false;
+const $=id=>document.getElementById(id);
+const pv=$("pv"), pctx=pv.getContext("2d");
+let selectedTopic="", nicheFilter=prefs.niche||"all";
+
+function newState(t){
+  return { texts:(t.examples[0]||[]).slice(), offsets:{}, photos:[], textScale:1, aspect:"orig", bg:"#111111", mode:"classic",
+           gif:null, frameIdx:0, speed:1, trimStart:0, trimEnd:0, dragIdx:-1, ai:[] };
+}
+
+/* ============================ Feed ============================ */
+function renderChips(){
+  $("topics").innerHTML = TOPICS.map(t=>`<button class="chip topic ${t===selectedTopic?"on":""}" data-t="${t}">${t}</button>`).join("");
+  $("niches").innerHTML = NICHES.map(([k,v])=>`<button class="chip ${k===nicheFilter?"on":""}" data-n="${k}">${v}</button>`).join("");
+}
+function renderGrid(){
+  const list=TEMPLATES.filter(t=>nicheFilter==="all"||t.niches.includes(nicheFilter))
+    .sort((a,b)=>LIFE_ORDER[a.life]-LIFE_ORDER[b.life] || b.vel-a.vel);
+  const nicheName=k=>(NICHES.find(n=>n[0]===k)||[])[1]||k;
+  let html=`<button class="card upload-card" data-id="custom"><div class="thumb"><span><b>📤</b>Upload image or GIF</span></div>
+    <div class="body"><div class="meta"><span class="badge evergreen">Your trend</span></div><h3>Saw a new meme?</h3><p>Upload the blank, caption it in seconds. Supports GIFs.</p></div></button>`;
+  html += list.map(t=>`<button class="card" data-id="${t.id}"><div class="thumb"><canvas data-thumb="${t.id}"></canvas></div>
+    <div class="body"><div class="meta"><span class="badge ${t.life}">${LIFE[t.life]}</span><span class="vel ${t.vel>=0?"up":"down"}">${t.vel>=0?"+":""}${t.vel}% this week</span></div>
+    <h3>${t.name}</h3><p>${t.howTo}</p><div class="tags">${t.origin==="PH"?"🇵🇭 Pinoy format · ":""}${t.niches.slice(0,3).map(nicheName).join(" · ")}</div></div></button>`).join("");
+  if(!list.length) html+=`<p class="muted">No templates in this niche yet.</p>`;
+  $("grid").innerHTML=html;
+  drawThumbs();
+}
+function drawThumbs(){
+  document.querySelectorAll("canvas[data-thumb]").forEach(c=>{
+    const t=byId(c.dataset.thumb), s=newState(t); s.bg="#EFE7DA";
+    const L=t.layout(s), size=420, H=Math.round(size*L.H/W);
+    const dpr=1; c.width=size; c.height=H; render(c.getContext("2d"),t,s,size);
+  });
+}
+$("topics").addEventListener("click",e=>{ const b=e.target.closest("[data-t]"); if(!b) return; selectedTopic = selectedTopic===b.dataset.t ? "" : b.dataset.t; renderChips(); if(selectedTopic) toast(`Topic set: ${selectedTopic} — AI captions will use it`); });
+$("niches").addEventListener("click",e=>{ const b=e.target.closest("[data-n]"); if(!b) return; nicheFilter=b.dataset.n; renderChips(); renderGrid(); });
+$("grid").addEventListener("click",e=>{ const b=e.target.closest("[data-id]"); if(!b) return; openEditor(b.dataset.id); if(b.dataset.id==="custom") pickFile(0); });
+
+/* ============================ Editor ============================ */
+function openEditor(id){
+  stopGif(); tpl=byId(id); st=newState(tpl);
+  $("feed").hidden=true; $("editor").hidden=false; window.scrollTo(0,0);
+  $("edTitle").textContent=tpl.name; const bd=$("edBadge"); bd.className="badge "+tpl.life; bd.textContent = id==="custom" ? "Your trend" : LIFE[tpl.life];
+  $("howto").innerHTML="<b>How it works:</b> "+tpl.howTo;
+  $("aiTopic").value=selectedTopic; $("aiNiche").value = nicheFilter!=="all" ? nicheFilter : (prefs.niche||"all");
+  $("textScale").value=1; $("modePanel").hidden = id!=="custom"; $("gifPanel").hidden=true; $("aiErr").hidden=true;
+  setSeg("aspectSeg","a","orig"); setSeg("modeSeg","mode","classic"); renderSwatches();
+  buildFields(); buildIdeas(); buildSlots(); sizePreview(); requestRender();
+}
+function closeEditor(){ stopGif(); $("editor").hidden=true; $("feed").hidden=false; drawThumbs(); }
+$("back").onclick=closeEditor; $("home").onclick=()=>{ if(!$("editor").hidden) closeEditor(); };
+
+function currentExamples(){ return tpl.id==="custom" && st.mode==="bar" ? tpl.examplesBar : tpl.examples; }
+function buildFields(){
+  const L=tpl.layout(st);
+  $("textFields").innerHTML = L.boxes.map((b,i)=>`<div class="field"><label for="tf${i}">${b.label}</label><textarea id="tf${i}" data-i="${i}" rows="${(b.h>250)?2:1}">${esc(st.texts[i]||"")}</textarea></div>`).join("");
+  $("textFields").querySelectorAll("textarea").forEach(ta=>ta.addEventListener("input",()=>{ st.texts[+ta.dataset.i]=ta.value; requestRender(); }));
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function buildIdeas(){
+  const n=tpl.layout(st).boxes.length;
+  const sets=[...st.ai.map(a=>({a,ai:true})), ...currentExamples().map(a=>({a,ai:false}))].filter(x=>x.a.length===n);
+  $("ideas").innerHTML = sets.map((x,k)=>`<button class="idea ${x.ai?"ai":""}" data-k="${k}">${x.ai?"✨ ":""}${x.a.map(esc).join('<span class="sep">/</span>')}</button>`).join("");
+  $("ideas").onclick=e=>{ const b=e.target.closest("[data-k]"); if(!b) return; st.texts=sets[+b.dataset.k].a.slice(); st.offsets={}; buildFields(); requestRender(); };
+}
+function buildSlots(){
+  const L=tpl.layout(st);
+  $("photoPanel").hidden = !L.slots.length;
+  $("slotBtns").innerHTML = L.slots.map((s,i)=>`<button class="btn" data-slot="${i}">${st.photos[i]?"🔁 Replace":"➕ Add"} photo ${L.slots.length>1?i+1:""}</button>${st.photos[i]?`<button class="pill" data-clear="${i}" style="font-size:12.5px">Remove</button>`:""}`).join("");
+  $("photoNote").textContent = tpl.id==="custom" ? "Images (JPG, PNG, WebP) or animated GIFs. Your files stay on your device." : "Optional: placeholders are fine, but your own photo makes it land harder.";
+  $("slotBtns").onclick=e=>{ const a=e.target.closest("[data-slot]"), c=e.target.closest("[data-clear]");
+    if(a) pickFile(+a.dataset.slot);
+    if(c){ const i=+c.dataset.clear; st.photos[i]=null; if(tpl.id==="custom"){ stopGif(); st.gif=null; $("gifPanel").hidden=true; } buildSlots(); sizePreview(); requestRender(); } };
+}
+function setSeg(id,key,val){ $(id).querySelectorAll("button").forEach(b=>b.classList.toggle("on", b.dataset[key]===String(val))); }
+$("aspectSeg").onclick=e=>{ const b=e.target.closest("[data-a]"); if(!b) return; st.aspect=b.dataset.a; setSeg("aspectSeg","a",st.aspect); sizePreview(); requestRender(); };
+$("modeSeg").onclick=e=>{ const b=e.target.closest("[data-mode]"); if(!b) return; setMode(b.dataset.mode); };
+function setMode(m){ if(st.mode===m) return; const first=(st.texts[0]||""); st.mode=m; st.offsets={};
+  st.texts = m==="bar" ? [ [st.texts[0],st.texts[1]].filter(Boolean).join(" ") || first ] : [first,""];
+  setSeg("modeSeg","mode",m); buildFields(); buildIdeas(); sizePreview(); requestRender(); }
+const SWATCHES=["#111111","#FFFFFF","#FFF8EE","#FF4F2E","#FFD23F","#2A4C8F"];
+function renderSwatches(){ $("swatches").innerHTML=SWATCHES.map(c=>`<button class="sw ${c===st.bg?"on":""}" data-c="${c}" style="background:${c}" aria-label="Background ${c}"></button>`).join(""); }
+$("swatches").onclick=e=>{ const b=e.target.closest("[data-c]"); if(!b) return; st.bg=b.dataset.c; renderSwatches(); requestRender(); };
+$("textScale").oninput=e=>{ st.textScale=+e.target.value; if(tpl.id==="custom"&&st.mode==="bar") sizePreview(); requestRender(); };
+$("resetPos").onclick=()=>{ st.offsets={}; requestRender(); };
+
+/* preview sizing + render loop */
+function sizePreview(){
+  if(!tpl) return; const L=tpl.layout(st); const {fh}=frameSize(L,st.aspect,1000); const ratio=fh/1000;
+  const avail=$("stage").clientWidth-28; const maxH=Math.max(320, window.innerHeight*(window.innerWidth>=920?0.72:0.62));
+  let cw=Math.min(avail,620), ch=cw*ratio; if(ch>maxH){ ch=maxH; cw=ch/ratio; }
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  pv.style.width=cw+"px"; pv.style.height=ch+"px"; pv.width=Math.round(cw*dpr); pv.height=Math.round(cw*dpr*ratio);
+}
+function requestRender(){ if(renderQueued) return; renderQueued=true; requestAnimationFrame(()=>{ renderQueued=false; if(!tpl||$("editor").hidden) return;
+  const L=tpl.layout(st); const {fh}=frameSize(L,st.aspect,pv.width); if(Math.abs(fh-pv.height)>2) sizePreview();
+  T=render(pctx,tpl,st,pv.width,{preview:true}); }); }
+window.addEventListener("resize",()=>{ sizePreview(); requestRender(); });
+
+/* drag text, tap photo slots */
+function toBase(e){ const r=pv.getBoundingClientRect(); const px=(e.clientX-r.left)*(pv.width/r.width), py=(e.clientY-r.top)*(pv.height/r.height); return {x:(px-T.ox)/T.s, y:(py-T.oy)/T.s}; }
+function inR(p,b){ return p.x>=b.x && p.x<=b.x+b.w && p.y>=b.y && p.y<=b.y+b.h; }
+let drag=null;
+pv.addEventListener("pointerdown",e=>{ if(!T) return; const p=toBase(e), L=T.L;
+  for(let i=L.boxes.length-1;i>=0;i--){ const o=st.offsets[i]||{dx:0,dy:0}, b={...L.boxes[i],x:L.boxes[i].x+o.dx,y:L.boxes[i].y+o.dy};
+    if(inR(p,b)){ drag={kind:"box",i,sx:p.x,sy:p.y,ox:o.dx,oy:o.dy,moved:false}; st.dragIdx=i; pv.setPointerCapture(e.pointerId); requestRender(); return; } }
+  for(let i=L.slots.length-1;i>=0;i--) if(inR(p,L.slots[i])){ drag={kind:"slot",i,cx:e.clientX,cy:e.clientY}; return; }
+});
+pv.addEventListener("pointermove",e=>{ if(!drag||drag.kind!=="box") return; const p=toBase(e); const dx=p.x-drag.sx, dy=p.y-drag.sy;
+  if(Math.abs(dx)+Math.abs(dy)>8) drag.moved=true; if(drag.moved){ st.offsets[drag.i]={dx:drag.ox+dx,dy:drag.oy+dy}; requestRender(); } });
+pv.addEventListener("pointerup",e=>{ if(!drag) return;
+  if(drag.kind==="box"){ st.dragIdx=-1; if(!drag.moved){ const ta=$("tf"+drag.i); if(ta){ ta.focus(); ta.select(); } } requestRender(); }
+  else if(Math.abs(e.clientX-drag.cx)+Math.abs(e.clientY-drag.cy)<10) pickFile(drag.i);
+  drag=null; });
+pv.addEventListener("pointercancel",()=>{ drag=null; st.dragIdx=-1; requestRender(); });
+
+/* ============================ Uploads + GIF ============================ */
+let pendingSlot=0;
+function pickFile(i){ pendingSlot=i; $("file").value=""; $("file").click(); }
+$("file").addEventListener("change",async e=>{
+  const f=e.target.files[0]; if(!f) return; const slot=pendingSlot;
+  if(tpl.id==="custom" && (f.type==="image/gif" || /\.gif$/i.test(f.name))){ await loadGifFile(f); return; }
+  if(tpl.id==="custom"){ stopGif(); st.gif=null; $("gifPanel").hidden=true; }
+  const img=new Image(); img.onload=()=>{ st.photos[slot]=img; buildSlots(); sizePreview(); requestRender(); };
+  img.onerror=()=>toast("Couldn't read that image"); img.src=URL.createObjectURL(f);
+});
+async function loadGifFile(f){
+  toast("Loading GIF…");
+  try{
+    const { parseGIF, decompressFrames } = await import("https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/+esm");
+    const gif=parseGIF(await f.arrayBuffer()); const raw=decompressFrames(gif,true);
+    const w=gif.lsd.width, h=gif.lsd.height; const full=document.createElement("canvas"); full.width=w; full.height=h; const fx=full.getContext("2d");
+    const pc=document.createElement("canvas"), px=pc.getContext("2d"); const frames=[]; let prev=null, saved=null;
+    for(const fr of raw.slice(0,180)){
+      if(prev){ if(prev.disposalType===2) fx.clearRect(prev.dims.left,prev.dims.top,prev.dims.width,prev.dims.height); else if(prev.disposalType===3 && saved) fx.putImageData(saved,0,0); }
+      if(fr.disposalType===3) saved=fx.getImageData(0,0,w,h);
+      const d=fr.dims; pc.width=d.width; pc.height=d.height; px.putImageData(new ImageData(fr.patch,d.width,d.height),0,0); fx.drawImage(pc,d.left,d.top);
+      const snap=document.createElement("canvas"); snap.width=w; snap.height=h; snap.getContext("2d").drawImage(full,0,0);
+      frames.push({canvas:snap, delay: fr.delay && fr.delay>=20 ? fr.delay : 100}); prev=fr;
+    }
+    if(!frames.length) throw new Error("no frames");
+    stopGif(); st.gif={w,h,frames}; st.trimStart=0; st.trimEnd=frames.length-1; st.frameIdx=0; st.photos[0]=frames[0].canvas;
+    $("gifPanel").hidden=false; $("trimStart").max=$("trimEnd").max=frames.length-1; $("trimStart").value=0; $("trimEnd").value=frames.length-1;
+    $("gifInfo").textContent=`${frames.length} frames · ${w}×${h}px · exports at up to 480px wide to keep files small`;
+    setMode("bar"); buildSlots(); sizePreview(); playGif(); toast("GIF loaded — caption bar mode on");
+  }catch(err){ console.error(err); toast("Couldn't load that GIF (needs internet for the GIF tools)"); }
+}
+function playGif(){ stopGif(); if(!st.gif) return; const step=()=>{ const g=st.gif; if(!g) return;
+  st.frameIdx = st.frameIdx>=st.trimEnd || st.frameIdx<st.trimStart ? st.trimStart : st.frameIdx+1;
+  st.photos[0]=g.frames[st.frameIdx].canvas; requestRender(); gifTimer=setTimeout(step, g.frames[st.frameIdx].delay/st.speed); }; step(); }
+function stopGif(){ if(gifTimer){ clearTimeout(gifTimer); gifTimer=null; } }
+$("speedSeg").onclick=e=>{ const b=e.target.closest("[data-s]"); if(!b) return; st.speed=+b.dataset.s; setSeg("speedSeg","s",b.dataset.s); };
+$("trimStart").oninput=e=>{ st.trimStart=Math.min(+e.target.value, st.trimEnd); e.target.value=st.trimStart; st.frameIdx=st.trimStart; };
+$("trimEnd").oninput=e=>{ st.trimEnd=Math.max(+e.target.value, st.trimStart); e.target.value=st.trimEnd; };
+
+/* ============================ AI captions ============================ */
+const caps = (async()=>{
+  const out={sample:null,downloads:null};
+  try{ if(window.claude && typeof window.claude.use==="function"){ const [s,d]=await Promise.all([window.claude.use("sample").catch(()=>null), window.claude.use("downloads").catch(()=>null)]); out.sample=s; out.downloads=d; } }catch(e){}
+  return out;
+})();
+caps.then(c=>{ if(!c.sample){ $("aiBox").hidden=true; $("aiOff").hidden=false; } });
+
+$("aiGo").onclick=async()=>{
+  const btn=$("aiGo"), err=$("aiErr"); err.hidden=true; btn.disabled=true; btn.innerHTML='<span class="spin"></span> Thinking of jokes…';
+  try{
+    const c=await caps; if(!c.sample) throw {code:"not_granted"};
+    const L=tpl.layout(st), n=L.boxes.length, niche=(NICHES.find(x=>x[0]===$("aiNiche").value)||NICHES[0])[1];
+    const topic=$("aiTopic").value.trim() || "anything Filipinos are talking about this week";
+    const lang=$("aiLang").value;
+    const prompt=`You write meme captions for Filipino content creators.
+
+Meme template: "${tpl.name}".
+How the joke works: ${tpl.howTo}
+It has ${n} text box(es), in this order:
+${L.boxes.map((b,i)=>`${i+1}. ${b.label}`).join("\n")}
+
+Example of a good caption set for this template: ${JSON.stringify(currentExamples()[0])}
+
+Creator's niche: ${niche==="Lahat"?"general / lifestyle":niche}
+Topic: ${topic}
+Language: ${lang}${lang==="Taglish"?" (natural mix of Tagalog and English, the way Filipinos actually post on Facebook and TikTok)":""}
+
+Write 6 different caption sets. Rules:
+- Each set must have exactly ${n} strings, one per text box, in order.
+- Keep each box short and punchy (most under 12 words).
+- Be specific and relatable to everyday Filipino life; avoid generic jokes.
+- No slurs, no insults about real private people, no political attacks, nothing sexual.
+
+Reply with JSON only, no other text: {"captions": [["box 1", ...], ...]}`;
+    const res=await c.sample(prompt,{modelTier:"default"});
+    const m=(res.text||"").match(/\{[\s\S]*\}/); const data=JSON.parse(m?m[0]:res.text);
+    const sets=(data.captions||[]).filter(a=>Array.isArray(a)&&a.length===n).map(a=>a.map(String));
+    if(!sets.length) throw new Error("empty");
+    st.ai=[...sets, ...st.ai].slice(0,12); buildIdeas(); toast("Tap an idea to use it");
+  }catch(e){
+    if(e && e.code==="not_granted"){ $("aiBox").hidden=true; $("aiOff").hidden=false; }
+    else { err.textContent = e && e.code==="rate_limited" ? "Too many requests. Wait a minute and try again." : "Couldn't get captions this time. Try again."; err.hidden=false; }
+  }finally{ btn.disabled=false; btn.innerHTML="✨ Suggest captions with AI"; }
+};
+
+/* ============================ Export ============================ */
+let exportBlob=null, exportName="";
+function openSheet(id){ $(id).classList.add("open"); } function closeSheet(id){ $(id).classList.remove("open"); }
+$("exClose").onclick=()=>{ closeSheet("exportSheet"); if(st&&st.gif) playGif(); };
+$("exportSheet").addEventListener("click",e=>{ if(e.target.id==="exportSheet") $("exClose").onclick(); });
+$("exportBtn").onclick=async()=>{
+  exportBlob=null; $("exImg").hidden=true; $("exSave").hidden=true; $("exHelp").hidden=true; $("exProgress").hidden=true; openSheet("exportSheet");
+  if(st.gif) return exportGif();
+  $("exTitle").textContent="Your meme";
+  const c=document.createElement("canvas"), L=tpl.layout(st), {fw,fh}=frameSize(L,st.aspect,1080); c.width=fw; c.height=fh;
+  render(c.getContext("2d"),tpl,st,1080);
+  c.toBlob(b=>{ exportBlob=b; exportName=`uso-${tpl.id}-${Date.now()}.png`; showResult("Save PNG"); },"image/png");
+};
+async function exportGif(){
+  stopGif(); $("exTitle").textContent="Making your GIF"; $("exProgress").hidden=false; $("exBar").style.width="0%";
+  try{
+    const { GIFEncoder, quantize, applyPalette } = await import("https://cdn.jsdelivr.net/npm/gifenc@1.0.3/+esm");
+    const L=tpl.layout(st); const ow=Math.min(480, Math.round(st.gif.w*2)); const {fw,fh}=frameSize(L,st.aspect,ow);
+    const c=document.createElement("canvas"); c.width=fw; c.height=fh; const cx=c.getContext("2d",{willReadFrequently:true});
+    const enc=GIFEncoder(); const idx=[]; for(let i=st.trimStart;i<=st.trimEnd;i++) idx.push(i);
+    for(let k=0;k<idx.length;k++){
+      const fr=st.gif.frames[idx[k]]; st.photos[0]=fr.canvas; render(cx,tpl,st,fw);
+      const data=cx.getImageData(0,0,fw,fh).data; const palette=quantize(data,256); const index=applyPalette(data,palette);
+      enc.writeFrame(index,fw,fh,{palette, delay:Math.max(20,Math.round(fr.delay/st.speed))});
+      if(k%2===0){ $("exBar").style.width=Math.round((k+1)/idx.length*100)+"%"; $("exProgText").textContent=`Encoding GIF… frame ${k+1} of ${idx.length}`; await new Promise(r=>setTimeout(r,0)); }
+    }
+    enc.finish(); exportBlob=new Blob([enc.bytes()],{type:"image/gif"}); exportName=`uso-${Date.now()}.gif`;
+    $("exProgress").hidden=true; $("exTitle").textContent="Your GIF meme"; showResult(`Save GIF (${(exportBlob.size/1048576).toFixed(1)} MB)`);
+  }catch(err){ console.error(err); $("exProgress").hidden=true; $("exTitle").textContent="GIF export failed"; $("exHelp").hidden=false; $("exHelp").textContent="The GIF encoder couldn't load. Check your connection and try again."; }
+}
+async function showResult(saveLabel){
+  const img=$("exImg"); img.src=URL.createObjectURL(exportBlob); img.hidden=false;
+  const c=await caps; $("exSave").textContent=saveLabel; $("exSave").hidden=!c.downloads; $("exHelp").hidden=false;
+  $("exHelp").textContent = c.downloads ? "Tip: post it while the trend is still rising 🔥" : "Long-press (phone) or right-click (computer) the image to save it.";
+}
+$("exSave").onclick=async()=>{
+  const c=await caps; if(!c.downloads||!exportBlob) return;
+  try{ await c.downloads.save({filename:exportName, data:exportBlob}); toast("Saved!"); }
+  catch(e){ if(e&&e.code==="declined") toast("Save cancelled"); else { $("exHelp").textContent="Saving isn't available here. Long-press or right-click the image to save it."; } }
+};
+
+/* ============================ Settings ============================ */
+function fillNicheSelects(){ const o=NICHES.map(([k,v])=>`<option value="${k}">${k==="all"?"General / lifestyle":v}</option>`).join(""); $("aiNiche").innerHTML=o; $("nicheIn").innerHTML=o; }
+function updateHandlePill(){ $("openSettings").textContent = prefs.handle ? prefs.handle.replace(/^@?/,"@") : "Set your @handle"; }
+$("openSettings").onclick=()=>{ $("handleIn").value=prefs.handle; $("nicheIn").value=prefs.niche||"all"; $("wmIn").checked=prefs.watermark; openSheet("settingsSheet"); };
+$("settingsSheet").addEventListener("click",e=>{ if(e.target.id==="settingsSheet") closeSheet("settingsSheet"); });
+$("saveSettings").onclick=()=>{ prefs.handle=$("handleIn").value.trim(); prefs.niche=$("nicheIn").value; prefs.watermark=$("wmIn").checked; savePrefs(); updateHandlePill(); closeSheet("settingsSheet");
+  if(!$("editor").hidden) requestRender(); else { nicheFilter=prefs.niche; renderChips(); renderGrid(); } toast("Profile saved"); };
+
+/* ============================ Toast + boot ============================ */
+let toastT=null; function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),2200); }
+fillNicheSelects(); updateHandlePill(); renderChips(); renderGrid();
+Promise.race([Promise.all(["400 40px Anton","700 40px Inter","800 40px Inter","600 40px Inter"].map(f=>document.fonts.load(f))), new Promise(r=>setTimeout(r,2500))])
+  .then(()=>{ drawThumbs(); requestRender(); }).catch(()=>{});
+</script>
+</body>
+</html>
