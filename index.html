@@ -735,14 +735,23 @@ async function exportGif(){
 }
 async function showResult(saveLabel){
   const img=$("exImg"); img.src=URL.createObjectURL(exportBlob); img.hidden=false;
-  const c=await caps; $("exSave").textContent=saveLabel; $("exSave").hidden=!c.downloads; $("exHelp").hidden=false;
-  $("exHelp").textContent = c.downloads ? "Tip: post it while the trend is still rising 🔥" : "Long-press (phone) or right-click (computer) the image to save it.";
+  const c=await caps; $("exSave").textContent=saveLabel; $("exSave").hidden=false; $("exHelp").hidden=false;
+  $("exHelp").textContent = "Tap the image or press Save to download it. Post it while the trend is still rising 🔥";
 }
-$("exSave").onclick=async()=>{
-  const c=await caps; if(!c.downloads||!exportBlob) return;
-  try{ await c.downloads.save({filename:exportName, data:exportBlob}); toast("Saved!"); }
-  catch(e){ if(e&&e.code==="declined") toast("Save cancelled"); else { $("exHelp").textContent="Saving isn't available here. Long-press or right-click the image to save it."; } }
-};
+async function saveExport(){
+  if(!exportBlob) return;
+  const c=await caps;
+  if(c.downloads){
+    try{ await c.downloads.save({filename:exportName, data:exportBlob}); toast("Saved!"); return; }
+    catch(e){ if(e&&e.code==="declined"){ toast("Save cancelled"); return; } }
+  }
+  try{
+    const a=document.createElement("a"); a.href=URL.createObjectURL(exportBlob); a.download=exportName;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),10000); toast("Saved!");
+  }catch(e){ $("exHelp").textContent="Saving isn't available here. Long-press or right-click the image to save it."; }
+}
+$("exSave").onclick=saveExport;
+$("exImg").onclick=saveExport; $("exImg").style.cursor="pointer";
 
 /* ============================ Settings ============================ */
 function fillNicheSelects(){ const o=NICHES.map(([k,v])=>`<option value="${k}">${k==="all"?"General / lifestyle":v}</option>`).join(""); $("aiNiche").innerHTML=o; $("nicheIn").innerHTML=o; }
